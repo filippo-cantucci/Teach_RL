@@ -4,13 +4,13 @@ import os
 import shutil
 from logger import setup_logging, get_logger
 from typing import Dict, Any, Optional
+from enum import Enum
 
 # Setup logging and get logger for this module
 setup_logging()
 logger = get_logger(__name__)
 
-
-class ConfigConstants:
+class ConfigManager():
     
     NAME_OF_SIM = "name_of_sim"
     NR_OF_SEEDS = "nr_of_seeds"
@@ -28,10 +28,9 @@ class ConfigConstants:
     EPSILON_T = "epsilon_t"
     EPS_S_MODE = "eps_s_mode"
     EPS_S_DEFAULT = "eps_s_default"
-    PREFERENCE_VAL_RED = "preference_val_red"
-    PREFERENCE_VAL_GREEN = "preference_val_green"
-
-class ConfigManager():
+    HUMAN_PREFERENCES = "human_preferences"
+    ABSENCE_MUX = "absence_multiplier"
+    LAYOUT_V = "layout_version"
     
     @staticmethod
     def load_config(config_path: str, overrides: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:  
@@ -74,8 +73,7 @@ class ConfigManager():
             logger.error(f"Error creating directory or copying file: {e}")
             raise
     
-    @staticmethod
-    def printALL(params):
+    def printALL(self,params):
         
         print("\n" + "="*50)
         print("CONFIGURATION PARAMETERS")
@@ -83,33 +81,32 @@ class ConfigManager():
         
         # Simulation parameters
         print("\n SIMULATION:")
-        print(f"  Name of simulation: {params.get(ConfigConstants.NAME_OF_SIM, 'N/A')}")
-        print(f"  Number of seeds: {params.get(ConfigConstants.NR_OF_SEEDS, 'N/A')}")
-        print(f"  Max steps: {params.get(ConfigConstants.MAX_STEPS, 'N/A')}")
-        print(f"  Number of episodes: {params.get(ConfigConstants.N_EPISODES, 'N/A')}")
-        print(f"  Seed: {params.get(ConfigConstants.SEED, 'N/A')}")
+        print(f"  Name of simulation: {params.get(self.NAME_OF_SIM, 'N/A')}")
+        print(f"  Number of seeds: {params.get(self.NR_OF_SEEDS, 'N/A')}")
+        print(f"  Max steps: {params.get(self.MAX_STEPS, 'N/A')}")
+        print(f"  Number of episodes: {params.get(self.N_EPISODES, 'N/A')}")
+        print(f"  Seed: {params.get(self.SEED, 'N/A')}")
         
         # Environment parameters
         print("\n  ENVIRONMENT:")
-        print(f"  Grid size: {params.get(ConfigConstants.GRID_SIZE, 'N/A')}")
-        print(f"  Render mode: {params.get(ConfigConstants.RENDER_MODE, 'N/A')}")
+        print(f"  Grid size: {params.get(self.GRID_SIZE, 'N/A')}")
+        print(f"  Render mode: {params.get(self.RENDER_MODE, 'N/A')}")
+        print(f"  Environment Layout: {params.get(self.LAYOUT_V, 'N/A')}")
         
         # Student parameters
         print("\n STUDENT HYPERPARAMETERS:")
-        print(f"  Alpha (learning rate): {params.get(ConfigConstants.ALPHA_S, 'N/A')}")
-        print(f"  Epsilon init: {params.get(ConfigConstants.EPSILON_S_INIT, 'N/A')}")
-        print(f"  Min epsilon: {params.get(ConfigConstants.MIN_EPSILON_S, 'N/A')}")
-        print(f"  Gamma (discount): {params.get(ConfigConstants.GAMMA_S, 'N/A')}")
-        print(f"  Alpha reward model: {params.get(ConfigConstants.ALPHA_REW_MODEL, 'N/A')}")
-        print(f"  Epsilon mode: {params.get(ConfigConstants.EPS_S_MODE, 'N/A')}")
-        print(f"  Epsilon default: {params.get(ConfigConstants.EPS_S_DEFAULT, 'N/A')}")
+        print(f"  Alpha (learning rate): {params.get(self.ALPHA_S, 'N/A')}")
+        print(f"  Epsilon init: {params.get(self.EPSILON_S_INIT, 'N/A')}")
+        print(f"  Min epsilon: {params.get(self.MIN_EPSILON_S, 'N/A')}")
+        print(f"  Gamma (discount): {params.get(self.GAMMA_S, 'N/A')}")
+        print(f"  Alpha reward model: {params.get(self.ALPHA_REW_MODEL, 'N/A')}")
+        print(f"  Epsilon mode: {params.get(self.EPS_S_MODE, 'N/A')}")
+        print(f"  Epsilon default: {params.get(self.EPS_S_DEFAULT, 'N/A')}")
         
         # Teacher parameters
         print("\n TEACHER HYPERPARAMETERS:")
-        print(f"  Alpha (learning rate): {params.get(ConfigConstants.ALPHA_T, 'N/A')}")
-        print(f"  Epsilon: {params.get(ConfigConstants.EPSILON_T, 'N/A')}")
-        print(f"  Preference value (red): {params.get(ConfigConstants.PREFERENCE_VAL_RED, 'N/A')}")
-        print(f"  Preference value (green): {params.get(ConfigConstants.PREFERENCE_VAL_GREEN, 'N/A')}")
+        print(f"  Alpha (learning rate): {params.get(self.ALPHA_T, 'N/A')}")
+        print(f"  Epsilon: {params.get(self.EPSILON_T, 'N/A')}")
         
         print("="*50 + "\n")
         

@@ -2,13 +2,8 @@ import yaml
 import copy
 import os
 import shutil
-from logger import setup_logging, get_logger
 from typing import Dict, Any, Optional
 from enum import Enum
-
-# Setup logging and get logger for this module
-setup_logging()
-logger = get_logger(__name__)
 
 class ConfigManager():
     
@@ -39,10 +34,8 @@ class ConfigManager():
             with open(config_path, "r") as f:
                 params = yaml.safe_load(f)
         except FileNotFoundError:
-            logger.error(f"Configuration file not found: {config_path}")
             raise
         except yaml.YAMLError as e:
-            logger.error(f"Error parsing YAML file {config_path}: {e}")
             raise
         
         # create a copy without modifying the config.yaml
@@ -63,14 +56,10 @@ class ConfigManager():
             
             # Copy the config file to the destination
             shutil.copy2(config_file_path, destination_path)
-            
-            logger.info(f"Configuration file copied from {config_file_path} to: {destination_path}")
-            
+                        
         except FileNotFoundError:
-            logger.error(f"Original configuration file not found: {config_file_path}")
             raise
         except OSError as e:
-            logger.error(f"Error creating directory or copying file: {e}")
             raise
     
     def printALL(self,params):

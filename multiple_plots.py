@@ -10,7 +10,7 @@ import glob
 
 def plot_results(x_start=None, x_end=None, max_episodes=None):
     
-    results_base_dir = "results/"
+    results_base_dir = "simulations/"
     
     # Find all .npy files in all Results_*/raw_data/ directories
     npy_files = glob.glob(os.path.join(results_base_dir, "Results_*", "raw_data", "*.npy"))

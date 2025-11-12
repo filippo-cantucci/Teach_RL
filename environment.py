@@ -32,7 +32,11 @@ class MyEnvironment(MiniGridEnv):
             }
         
         # attributi di agent
-        self.estimated_model_of_human_colors = dict.fromkeys(Human.MODEL_OF_HUMAN_COLORS, 0.0)   
+        self.estimated_model_of_human_colors = dict.fromkeys(Human.MODEL_OF_HUMAN_COLORS, 0.0)
+        
+        # dict of counters of visited cells corresponding to human preferences
+        self.cell_visit_frequencies = dict.fromkeys(Human.MODEL_OF_HUMAN_COLORS, 0)
+  
         
         # Define the mission space
         mission_space = MissionSpace(mission_func=self._gen_mission)
@@ -47,21 +51,26 @@ class MyEnvironment(MiniGridEnv):
             **kwargs,
         )
         
-    def _is_on_unpreferred_cell(self, human_preferences=None):
-        
+    def check_if_agent_is_on_unpreferred_cell(self, human_preferences=None):
         if human_preferences:
-           color = getattr(self.grid.get(*self.agent_pos), "color", None) if self.grid.get(*self.agent_pos) is not None else None
-           return color if (color in human_preferences) else None
+           color = getattr(self.grid.get(*self.agent_pos), "color", None)
+           if color in human_preferences:
+               self.cell_visit_frequencies[color] += 1
+               return color
+           else:
+               return None
         else:
             return None
     
-    def _update_model_of_h_pref(self,color,human_preferred_colors):
+    def reset(self, seed=None):
+        super().reset()
+        self.cell_visit_frequencies = dict.fromkeys(Human.MODEL_OF_HUMAN_COLORS, 0)
         
+    def _update_model_of_h_pref(self,color,human_preferred_colors):
         self.estimated_model_of_human_colors[color] += self.cfg[ConfigManager.ALPHA_REW_MODEL] * (human_preferred_colors[color]
                                                                 - self.estimated_model_of_human_colors[color])
 
-    def rebuild_env(self, layout,width, height):
-        print("Rebuild Environment ",layout)
+    def rebuild_env(self, width, height):
         self._gen_grid(width, height)
     
     @staticmethod
@@ -70,7 +79,6 @@ class MyEnvironment(MiniGridEnv):
         return "Reach the green Goal"
     
     def _gen_grid(self,width, height):
-                
         make = self.layouts.get(self.cfg[ConfigManager.LAYOUT_V], self.build_v1)
         make(width,height)
     
@@ -106,8 +114,10 @@ class MyEnvironment(MiniGridEnv):
                 
         # Place red cells (preferences) in front of the gap the grid
         for i in range(1,9):
-            self.put_obj(Floor(self.RED),wall_fixed_offset // 2,i)
-            self.put_obj(Floor(self.RED),(wall_fixed_offset // 2)+1,i)
+            if i % 2 == 0:
+                self.put_obj(Floor(self.RED),wall_fixed_offset // 2,i)
+            else:
+                self.put_obj(Floor(self.BLUE),(wall_fixed_offset // 2),i)
         for i in range(1,6):
             self.put_obj(Floor(self.RED),wall_fixed_offset+i,width // 3 + 6)
             self.put_obj(Floor(self.RED),wall_fixed_offset+i,width // 3 + 5) 
@@ -211,13 +221,14 @@ class MyEnvironment(MiniGridEnv):
                 
         # Place red cells (preferences) in front of the gap the grid
         for i in range(2,9):
-            self.put_obj(Floor(self.BLUE),wall_fixed_offset // 2,i + 5)
-            self.put_obj(Floor(self.BLUE),(wall_fixed_offset // 2)+1,i + 5)
-            self.put_obj(Floor(self.BLUE),(wall_fixed_offset // 2)+2,i + 5)
+            if i % 2 == 0:
+                self.put_obj(Floor(self.BLUE),wall_fixed_offset // 2,i + 5)
+            else:    
+                self.put_obj(Floor(self.RED),(wall_fixed_offset // 2)+2,i + 5)
         for i in range(2,9):
             self.put_obj(Floor(self.RED),(wall_fixed_offset // 2) + 8,i + 5)
             self.put_obj(Floor(self.RED),(wall_fixed_offset // 2)+9,i + 5)
-            self.put_obj(Floor(self.RED),(wall_fixed_offset // 2)+10,i + 5)
+            self.put_obj(Floor(self.BLUE),(wall_fixed_offset // 2)+10,i + 5)
         
         # Place a goal square in the bottom-right corner
         self.put_obj(Goal(), width -2, height // 2)
@@ -298,7 +309,7 @@ class MyEnvironment(MiniGridEnv):
     
     
     
-"""    
+"""  
 from minigrid.manual_control import ManualControl
 from environment import MyEnvironment
     
@@ -310,4 +321,4 @@ if __name__ == "__main__":
     env = MyEnvironment(params)
     manual_control = ManualControl(env, seed=params[ConfigManager.SEED])
     manual_control.start()
-"""   
+"""

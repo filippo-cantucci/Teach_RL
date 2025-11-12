@@ -16,14 +16,13 @@ class Training:
         self.env = env # environment init
         self.teacher = human # teacher init
         
-        self.student_competence = [] #competence as number of successful/failure episodes (target reached or not)
-
-        self.cumulative_reward_s_history = [] # cumulative reward over the training for the student
-        self.cumulative_teacher_actions = []  
-        self.cumulative_reward_teacher = []
+        self.student_competence = [] #competence as number of successful/failure episodes (target reached or not) (per tutti gli episodi)
+        self.cumulative_reward_s_trend = [] # cumulative reward trend over the training for the student  (per tutti gli episodi)
+        
+        self.cumulative_teacher_actions = []  # cumulative actions selected over the training for the teacher (per tutti gli episodi)
+        self.cumulative_reward_teacher = []   # cumulative reward over the training for the teacher (per tutti gli episodi)
         
         self.student_QTable_Dict = {k: np.zeros((env.height * env.width * env.NR_OF_ROBOT_DIRECTIONS,env.NR_OF_ROBOT_ACTIONS)) for k in ("v1","v2","v3","v4")}
-        
         self.teacher_Q_Values = {human.HUMAN_ACTION_STAY: 0.0, human.HUMAN_ACTION_LEAVE: 0.0} # Q-values for human actions
         
     @staticmethod
@@ -51,7 +50,7 @@ class Training:
     def reset_training(self):
         np.random.seed(self.cfg[ConfigManager.SEED])
         self.student_competence = []
-        self.cumulative_reward_s_history = []
+        self.cumulative_reward_s_trend = []
         self.cumulative_teacher_actions = []  
         self.cumulative_reward_teacher = []
             
@@ -62,19 +61,17 @@ class Training:
         self.teacher = human
     
     def run_training(self):
-        
-        print("Run Training")
-        
-        self.reset_training()
         current_student_QTable = self.student_QTable_Dict[self.cfg[ConfigManager.LAYOUT_V]]
+        if self.cfg[ConfigManager.SIM_MODE] == "single_env":
+            episodes = self.cfg[ConfigManager.N_EPISODES_SINGLE_ENV]
+        elif self.cfg[ConfigManager.SIM_MODE] == "multiple_env":
+            episodes = self.cfg[ConfigManager.N_EPISODES_MULTIPLE_ENV]
                         
-        for ep in range(self.cfg[ConfigManager.N_EPISODES]):   
-            
-            self.env.reset()
-            cumulative_reward_s = 0.0
+        for ep in range(episodes):   
+            self.env.reset(self.cfg[ConfigManager.SEED])
+            cumulative_reward_s = 0.0  # cumulative reward over a single episode for the student (su tutto l'episodio)
             ep_terminated = False
             ep_truncated = False
-            cell_visit_frequencies = dict.fromkeys(self.teacher.MODEL_OF_HUMAN_COLORS, 0)
             
             # ======================= TEACHER ACTION SELECTION ==================================
             
@@ -87,7 +84,7 @@ class Training:
                 max_actions = [a for a, v in self.teacher_Q_Values.items() if v == max_val] #list of actions corresponding to max_val
                 t_action = np.random.choice(max_actions)
                 
-            # t_action = self.teacher.HUMAN_ACTION_STAY
+            t_action = self.teacher.HUMAN_ACTION_STAY
                 
             # ======================= START STUDENT LEARNING PHASE ===============================
                     
@@ -99,12 +96,7 @@ class Training:
             current_index = self.state_to_index(current_state, self.env.width, self.env.NR_OF_ROBOT_DIRECTIONS)
                         
             while not ep_terminated and not ep_truncated:   
-                
-                # Check if the student (robot) is on "unpreferred cells" (not preferred by human)
-                color = self.env._is_on_unpreferred_cell(self.teacher.MODEL_OF_HUMAN_COLORS)
-                if color:
-                    cell_visit_frequencies[color] += 1 
-                                    
+                                                    
                 # Student action selection: go forward, left, right (e-greedy)
                 if np.random.uniform(0, 1) < self.epsilon_s:
                     s_action = np.random.randint(0, self.env.NR_OF_ROBOT_ACTIONS)
@@ -113,6 +105,9 @@ class Training:
                     max_val = np.max(current_student_QTable[current_index, :])
                     max_actions = [a for a in range(self.env.NR_OF_ROBOT_ACTIONS) if current_student_QTable[current_index, a] == max_val]
                     s_action = np.random.choice(max_actions)
+                    
+                # Check if the student (robot) is on "unpreferred cells" (not preferred by human)
+                color = self.env.check_if_agent_is_on_unpreferred_cell(self.teacher.MODEL_OF_HUMAN_COLORS)    
 
                 # Take the action and observe the outcome
                 new_obs, reward_s, ep_terminated, ep_truncated, info = self.env.step(s_action,t_action,color,self.teacher.MODEL_OF_HUMAN_COLORS)
@@ -133,7 +128,7 @@ class Training:
                 
             # ======================= UPDATE TEACHER ACTION VALUES  ===============================
                                 
-            reward_teacher = self.teacher._reward_Human(t_action, info.get('r_tau'), cell_visit_frequencies) # Compute the human reward based on selected action
+            reward_teacher = self.teacher._reward_Human(t_action, info.get('r_tau'), self.env.cell_visit_frequencies) # Compute the human reward based on selected action
             self.teacher_Q_Values[t_action] = (1-self.cfg[ConfigManager.ALPHA_T]) * self.teacher_Q_Values[t_action] + self.cfg[ConfigManager.ALPHA_T] * reward_teacher # Update the human Q-values
 
             if ep_terminated == True: # the agent reached the goal (terminal state)
@@ -146,7 +141,7 @@ class Training:
             else:
                 self.cumulative_teacher_actions.append(0)
             
-            self.cumulative_reward_s_history.append(cumulative_reward_s)
+            self.cumulative_reward_s_trend.append(cumulative_reward_s)
             self.cumulative_reward_teacher.append(reward_teacher)
              
         # ======================= END EPISODE ==================================

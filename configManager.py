@@ -11,6 +11,8 @@ class ConfigManager():
     NR_OF_SEEDS = "nr_of_seeds"
     MAX_STEPS = "max_steps"
     N_EPISODES = "n_episodes"
+    N_EPISODES_SINGLE_ENV = "n_episodes_single_env"
+    N_EPISODES_MULTIPLE_ENV = "n_episodes_multiple_env"
     SEED = "seed"
     GRID_SIZE = "grid_size"
     RENDER_MODE ="render_mode"
@@ -26,6 +28,7 @@ class ConfigManager():
     HUMAN_PREFERENCES = "human_preferences"
     ABSENCE_MUX = "absence_multiplier"
     LAYOUT_V = "layout_version"
+    SIM_MODE = "sim_mode"
     
     @staticmethod
     def load_config(config_path: str, overrides: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:  
@@ -73,8 +76,10 @@ class ConfigManager():
         print(f"  Name of simulation: {params.get(self.NAME_OF_SIM, 'N/A')}")
         print(f"  Number of seeds: {params.get(self.NR_OF_SEEDS, 'N/A')}")
         print(f"  Max steps: {params.get(self.MAX_STEPS, 'N/A')}")
-        print(f"  Number of episodes: {params.get(self.N_EPISODES, 'N/A')}")
+        print(f"  Number of episodes (single_env mode): {params.get(self.N_EPISODES_SINGLE_ENV, 'N/A')}")
+        print(f"  Number of episodes (multiple_env_mode): {params.get(self.N_EPISODES_MULTIPLE_ENV, 'N/A')}")
         print(f"  Seed: {params.get(self.SEED, 'N/A')}")
+        print(f"  Simulation Mode: {params.get(self.SIM_MODE, 'N/A')}")
         
         # Environment parameters
         print("\n  ENVIRONMENT:")

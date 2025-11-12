@@ -3,13 +3,9 @@ import matplotlib.pyplot as plt
 import csv
 import os
 import datetime
-from logger import get_logger
 
 
 WINDOW_SIZE = 10
-
-# Initialize logger for this module
-logger = get_logger("data")
 
 def create_output_directories_tree(s_name):
     
@@ -80,9 +76,9 @@ def plot_data(data,output_dir, title="Data Trend"):
     plt.ylabel(title)    
     plt.title(title)
     
-    # mostra i numeri sull'asse x solo ogni 500 episodi
+    # mostra i numeri sull'asse x solo ogni n episodi
     total_episodes = len(data)
-    major_ticks = np.arange(0, total_episodes, 500)  # Numeri ogni 500 episodi
+    major_ticks = np.arange(0, total_episodes, 1000)  # Numeri ogni n episodi
 
     ax = plt.gca()  # Get current axis
     ax.set_xticks(major_ticks)  # Imposta le tacche principali
@@ -200,7 +196,6 @@ def save_statistics(data, output_dir, title="Data Statistics", nr_seeds=0):
         f.write("\n" + "=" * 50 + "\n")
         f.write(f"Generated on: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
     
-    logger.info("Saved statistics to: %s", stats_path)
     return stats
 
 def analyze_data(data,output_dir, title="Data",nr_seeds = 0):
